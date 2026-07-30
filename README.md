@@ -1,6 +1,6 @@
 # Exploração e Modelagem Estatística de Dados do League of Legends
 
-[![Status](https://img.shields.io/badge/status-concluído-brightgreen.svg)]() [![License](https://img.shields.io/badge/license-MIT-green.svg)]() [![R](https://img.shields.io/badge/R-%3E=4.2.0-276DC3.svg)]() [![Made with love](https://img.shields.io/badge/made%20with-%E2%9D%A4-red.svg)]()
+[![Status](https://img.shields.io/badge/status-concluído-brightgreen.svg)]() [![License](https://img.shields.io/badge/license-MIT-green.svg)]() [![R](https://img.shields.io/badge/R-%3E=4.5.1-276DC3.svg)]() [![Made with love](https://img.shields.io/badge/made%20with-%E2%9D%A4-red.svg)]()
 
 Este repositório abriga os scripts, dados e visualizações gerados no desenvolvimento do projeto de modelagem estatística do cenário competitivo de e-sports. O trabalho foca na análise tática e de desempenho de equipes profissionais durante a Temporada 14 de League of Legends.
 
