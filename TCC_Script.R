@@ -80,6 +80,47 @@ dados_modelagem <- dados_limpos %>%
   select(Name, Region, `Win rate`) %>%
   cbind(escores_fatoriais)
 
+# VISUALIZAÇÃO DA ESTRUTURA FATORIAL
+
+cargas_matriz <- unclass(af_tcc$loadings) %>%
+  as.data.frame() %>%
+  rownames_to_column(var = "Variavel") %>%
+  pivot_longer(cols = c(PA1, PA2), names_to = "Fator", values_to = "Carga")
+
+# Mapa de Calor
+ggplot(cargas_matriz, aes(x = Fator, y = reorder(Variavel, Carga), fill = Carga)) +
+  geom_tile(color = "white", size = 0.5) +
+  scale_fill_gradient2(low = "#d73027", mid = "white", high = "#4575b4", midpoint = 0,
+                       limits = c(-1, 1), name = "Carga\nFatorial") +
+  geom_text(aes(label = round(Carga, 2)), color = "black", size = 3.5, fontface = "bold") +
+  theme_minimal() +
+  labs(
+    title = "",
+    x = "Fatores (Eixos Estratégicos)", 
+    y = "Métricas de Desempenho"
+  ) +
+  theme(
+    axis.text.x = element_text(size = 12, face = "bold"),
+    axis.text.y = element_text(size = 10),
+    panel.grid = element_blank()
+  )
+
+# Plano Bidimensional das Variáveis (Cargas Fatoriais)
+cargas_largas <- cargas_matriz %>% 
+  pivot_wider(names_from = Fator, values_from = Carga)
+
+ggplot(cargas_largas, aes(x = PA1, y = PA2, label = Variavel)) +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray50") +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray50") +
+  geom_point(color = "red", size = 3) +
+  geom_text_repel(size = 4, fontface = "bold", max.overlaps = 20) +
+  theme_minimal() +
+  labs(
+    title = "Plano Bidimensional das Variáveis (Cargas Fatoriais)",
+    x = "Fator 1: Pressão e Execução",
+    y = "Fator 2: Sobrevivência e Controle de Mapa"
+  )
+
 # =========================== #
 # 4. AGRUPAMENTOS (CLUSTERS)  #
 # =========================== #
@@ -107,6 +148,62 @@ ggplot(dados_modelagem, aes(x = Escore_Objetivos, y = Escore_Macro, color = Clus
   geom_point(size = 4, alpha = 0.8) +
   theme_minimal() +
   labs(title = "Mapeamento dos Clusters", x = "Fator 1: Pressão e Execução", y = "Fator 2: Sobrevivência e Controle de Mapa")
+
+
+# ANÁLISE DESCRITIVA DOS PERFIS IDENTIFICADOS
+
+dados_perfil <- dados_final %>%
+  mutate(
+    K_Means = as.factor(dados_modelagem$Cluster),
+    Hierarquico = as.factor(dados_modelagem$Cluster_Hierarquico)
+  )
+
+perfil_kmeans <- dados_perfil %>%
+  select(-Hierarquico) %>%
+  group_by(K_Means) %>%
+  summarise(across(everything(), mean)) %>%
+  pivot_longer(cols = -K_Means, names_to = "Variavel", values_to = "Media_Z")
+
+# Mapa de Calor: Perfil Tático K-Means
+plot_perfil_kmeans <- ggplot(perfil_kmeans, aes(x = Variavel, y = K_Means, fill = Media_Z)) +
+  geom_tile(color = "white", size = 0.5) +
+  scale_fill_gradient2(low = "#d73027", mid = "white", high = "#4575b4", midpoint = 0, 
+                       limits = c(-1.5, 1.5), oob = scales::squish, name = "Z-Score\nMédio") +
+  geom_text(aes(label = round(Media_Z, 2)), color = "black", size = 3) +
+  theme_minimal() +
+  labs(
+    title = "Perfil Tático: K-Means (Baseado nos Fatores)",
+    subtitle = "Médias das variáveis originais por Cluster",
+    x = "Métricas de Desempenho",
+    y = "Clusters (K-Means)"
+  ) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, face = "bold"))
+
+print(plot_perfil_kmeans)
+
+# Boxplots: Distribuição das Métricas por Cluster
+dados_boxplot <- dados_perfil %>%
+  select(-Hierarquico) %>% 
+  pivot_longer(cols = -K_Means, names_to = "Variavel", values_to = "Z_Score")
+
+plot_boxplots <- ggplot(dados_boxplot, aes(x = K_Means, y = Z_Score, fill = K_Means)) +
+  geom_boxplot(alpha = 0.7, outlier.shape = 21, outlier.size = 2, outlier.fill = "white") +
+  facet_wrap(~ Variavel, scales = "free_y", ncol = 4) + 
+  theme_minimal() +
+  scale_fill_manual(values = c("#d73027", "#1b7837", "#4575b4")) + 
+  labs(
+    title = "Distribuição das Métricas por Perfil Tático (K-Means)",
+    x = "Perfil Tático (Cluster)",
+    y = "Desvio em relação à Média Global (Z-Score)"
+  ) +
+  theme(
+    legend.position = "none", 
+    strip.text = element_text(face = "bold", size = 10), 
+    axis.text.x = element_text(face = "bold", size = 10),
+    panel.grid.major.x = element_blank() 
+  )
+
+print(plot_boxplots)
 
 # ======================================== #
 # 5. REGRESSÃO LOGÍSTICA (SUPERVISIONADA)  #
